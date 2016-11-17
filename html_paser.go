@@ -26,7 +26,7 @@ type Link struct {
 	Title string
 	Url   string
 	Index int
-	img   string
+	Img   string
 	Items []ItemLink
 }
 
@@ -34,7 +34,7 @@ type ItemLink struct {
 	Title string
 	Url   string
 	Index int
-	img   string
+	Img   string
 }
 
 func ParseECHtml(url_string string) {
