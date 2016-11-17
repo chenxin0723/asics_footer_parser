@@ -58,7 +58,6 @@ func ParseECHtml(url_string string) {
 			Title: s.Children().Filter("h4").First().Text(),
 			Url:   "#",
 			Index: i + 1,
-			img:   "",
 		}
 
 		s.Children().Filter("ul").Children().Each(func(i int, s *goquery.Selection) {
@@ -95,18 +94,18 @@ func ParseNoECHtml(url_string string) {
 	}
 
 	//parse the footer
-	doc.Find(".footer section").Children().Each(func(i int, s *goquery.Selection) {
+	doc.Find(".footer #tertiary section").Each(func(i int, s *goquery.Selection) {
 		link := Link{
-			Title: s.Children().Filter("h4").First().Text(),
+			Title: s.Children().First().Text(),
 			Url:   "#",
 			Index: i + 1,
-			img:   "",
 		}
+		fmt.Println(s)
 
 		s.Children().Filter("ul").Children().Each(func(i int, s *goquery.Selection) {
 			itemlink := ItemLink{
 				Title: s.Children().First().Text(),
-				Url:   target_url.Scheme + "://" + target_url.Host + s.Children().First().AttrOr("href", "#"),
+				Url:   s.Children().First().AttrOr("href", "#"),
 				Index: i + 1,
 			}
 			link.Items = append(link.Items, itemlink)
