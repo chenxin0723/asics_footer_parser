@@ -7,13 +7,13 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 )
 
 var (
 	EuropeEcAsics = []string{"http://www.asics.com/gb/en-gb", "http://www.asics.com/fr/fr-fr", "http://www.asics.com/es/es-es", "http://www.asics.com/it/it-it"}
-
-	NoEcAsics = []string{"https://www.asics.co.za/", "https://www.asics.pl", "https://de.asics.ch"}
+	NoEcAsics     = []string{"https://www.asics.co.za/", "https://www.asics.pl", "https://de.asics.ch"}
 )
 
 type ParseData struct {
@@ -59,9 +59,9 @@ func ParseECHtml(url_string string) {
 	//parse the header
 	doc.Find("#main-menu").Children().Not(".mobile").Not("div").Each(func(i int, s *goquery.Selection) {
 		link := Link{
-			Title:     s.Children().Filter("h4").First().AttrOr("title", ""),
-			Url:       target_url.Scheme + "://" + target_url.Host + s.Children().First().AttrOr("href", "#"),
-			Name:      s.Children().Filter("h4").First().Text(),
+			Title:     s.Children().First().AttrOr("title", ""),
+			Url:       paser_url(target_url, s.Children().First().AttrOr("href", "#")),
+			Name:      s.Children().First().Text(),
 			Index:     i + 1,
 			SingleRow: true,
 		}
@@ -73,32 +73,36 @@ func ParseECHtml(url_string string) {
 					Title:     s.Find("h5").First().AttrOr("title", ""),
 					Url:       "#",
 					Name:      s.Find("h5").First().Text(),
-					Index:     i + 1,
-					SingleRow: true,
+					Index:     1,
+					SingleRow: false,
 				}
 
 				secondlink := Link{
-					Title:     s.Find("span").First().AttrOr("title", ""),
+					Title:     s.Find(".empty-nav-item").Last().AttrOr("title", ""),
 					Url:       "#",
-					Name:      s.Find("span").First().Text(),
-					Index:     i + 1,
-					SingleRow: true,
+					Name:      s.Find(".empty-nav-item").Last().Text(),
+					Index:     2,
+					SingleRow: false,
 				}
 
 				is_first := true
 				s.Find(".yCmsComponent").Each(func(i int, s *goquery.Selection) {
+					// fmt.Println(i)
+					// fmt.Println(s.Children().First().Html())
 					if s.Children().First().Is("span") {
-						is_first = false
+						if s.Children().First().Text() != "" {
+							is_first = false
+						}
 
 					} else {
 						itemlink := ItemLink{
 							Title: s.Children().First().AttrOr("title", ""),
 							Name:  s.Children().First().Text(),
-							Url:   target_url.Scheme + "://" + target_url.Host + s.Children().First().AttrOr("href", "#"),
+							Url:   paser_url(target_url, s.Children().First().AttrOr("href", "#")),
 							Index: i + 1,
 						}
 						if s.Children().First().Children().First().Is("img") {
-							itemlink.Img = s.Children().First().Children().First().AttrOr("src", "#")
+							itemlink.Img = paser_url(target_url, s.Children().First().Children().First().AttrOr("src", "#"))
 						}
 
 						if is_first {
@@ -126,11 +130,11 @@ func ParseECHtml(url_string string) {
 					itemlink := ItemLink{
 						Title: s.Children().First().AttrOr("title", ""),
 						Name:  s.Children().First().Text(),
-						Url:   target_url.Scheme + "://" + target_url.Host + s.Children().First().AttrOr("href", "#"),
+						Url:   paser_url(target_url, s.Children().First().AttrOr("href", "#")),
 						Index: i + 1,
 					}
 					if s.Children().First().Children().First().Is("img") {
-						itemlink.Img = s.Children().First().Children().First().AttrOr("src", "#")
+						itemlink.Img = paser_url(target_url, s.Children().First().Children().First().AttrOr("src", "#"))
 					}
 
 					firstlink.Items = append(firstlink.Items, itemlink)
@@ -145,17 +149,18 @@ func ParseECHtml(url_string string) {
 	//parse the footer
 	doc.Find("footer").Children().Filter(".tiger-clearfix-toggle").Each(func(i int, s *goquery.Selection) {
 		link := Link{
-			Title: s.Children().Filter("h4").First().AttrOr("title", ""),
-			Url:   "#",
-			Name:  s.Children().Filter("h4").First().Text(),
-			Index: i + 1,
+			Title:     s.Children().Filter("h4").First().AttrOr("title", ""),
+			Url:       "#",
+			Name:      s.Children().Filter("h4").First().Text(),
+			Index:     i + 1,
+			SingleRow: true,
 		}
 
 		s.Children().Filter("ul").Children().Each(func(i int, s *goquery.Selection) {
 			itemlink := ItemLink{
 				Title: s.Children().First().AttrOr("title", ""),
 				Name:  s.Children().First().Text(),
-				Url:   target_url.Scheme + "://" + target_url.Host + s.Children().First().AttrOr("href", "#"),
+				Url:   paser_url(target_url, s.Children().First().AttrOr("href", "#")),
 				Index: i + 1,
 			}
 			link.Items = append(link.Items, itemlink)
@@ -200,7 +205,7 @@ func ParseNoECHtml(url_string string) {
 					Title:     doc.Find("header #asicsPanels").Children().Slice(i, i+1).Children().First().Children().Filter(".asicsFeatured").Children().First().Children().Slice(ii, ii+1).Children().End().AttrOr("title", ""),
 					Name:      strings.TrimSpace(doc.Find("header #asicsPanels").Children().Slice(i, i+1).Children().First().Children().Filter(".asicsFeatured").Children().First().Children().Slice(ii, ii+1).Children().End().Text()),
 					Url:       doc.Find("header #asicsPanels").Children().Slice(i, i+1).Children().First().Children().Filter(".asicsFeatured").Children().First().Children().Slice(ii, ii+1).Children().End().AttrOr("href", "#"),
-					Img:       doc.Find("header #asicsPanels").Children().Slice(i, i+1).Children().First().Children().Filter(".asicsFeatured").Children().First().Children().Slice(ii, ii+1).Children().First().Children().First().AttrOr("src", "#"),
+					Img:       paser_url(target_url, doc.Find("header #asicsPanels").Children().Slice(i, i+1).Children().First().Children().Filter(".asicsFeatured").Children().First().Children().Slice(ii, ii+1).Children().First().Children().First().AttrOr("src", "#")),
 					ImgSize:   "small",
 					Index:     i + 1,
 					SingleRow: true,
@@ -208,7 +213,7 @@ func ParseNoECHtml(url_string string) {
 				ss.Children().Filter("ul").Children().Each(func(iii int, s *goquery.Selection) {
 					itemlink := ItemLink{
 						Title: s.Children().First().AttrOr("title", ""),
-						Url:   s.Children().First().AttrOr("href", "#"),
+						Url:   paser_url(target_url, s.Children().First().AttrOr("href", "#")),
 						Name:  s.Children().First().Text(),
 						Index: iii + 1,
 					}
@@ -238,7 +243,7 @@ func ParseNoECHtml(url_string string) {
 		s.Children().Filter("ul").Children().Each(func(i int, s *goquery.Selection) {
 			itemlink := ItemLink{
 				Title: s.Children().First().AttrOr("title", ""),
-				Url:   s.Children().First().AttrOr("href", "#"),
+				Url:   paser_url(target_url, s.Children().First().AttrOr("href", "#")),
 				Name:  s.Children().First().Text(),
 				Index: i + 1,
 			}
@@ -256,6 +261,16 @@ func ParseNoECHtml(url_string string) {
 
 }
 
+func paser_url(target_url *url.URL, url string) (return_url string) {
+
+	if matched, err := regexp.Match(`http`, []byte(url)); matched && err == nil {
+		return_url = url
+	} else {
+		return_url = target_url.Scheme + "://" + target_url.Host + url
+	}
+	return
+}
+
 func main() {
 	for _, url := range EuropeEcAsics {
 		ParseECHtml(url)
@@ -263,8 +278,5 @@ func main() {
 	for _, url := range NoEcAsics {
 		ParseNoECHtml(url)
 	}
-
-	// ParseECHtml("http://www.asics.com/gb/en-gb")
-	// ParseNoECHtml("https://www.asics.co.za/")
 
 }
