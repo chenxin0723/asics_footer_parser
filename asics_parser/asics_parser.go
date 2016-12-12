@@ -13,7 +13,13 @@ import (
 )
 
 var (
-	WirteDir = ""
+	WirteDir       = ""
+	NoEcAsicsLocal = map[string]string{"www.asics.fi": "en-fi", "www.asics.pl": "pl-pl",
+		"www.asics.pt": "pt-pt", "en.asics.ch": "en-ch", "fr.asics.ch": "fr-ch",
+		"de.asics.ch": "de-ch", "www.asics.ru": "ru-ru",
+		"www.asics.co.za": "en-za", "www.asics.com.hk": "en-hk", "www.asics.com.cn": "zh-cn",
+		"www.asics.com.sg": "en-sg", "www.asicsindia.in": "en-in",
+	}
 )
 
 var EuropeEcAsics []string
@@ -201,7 +207,7 @@ func ParseECHtml(url_string string) {
 
 	jsondata, _ := json.Marshal(parsedata)
 
-	fmt.Printf("current url is %s \n", url_string)
+	fmt.Printf("current url is %s  \n", url_string)
 	file, _ := os.OpenFile(WirteDir+strings.Split(target_url.Path, "/")[2]+".json", os.O_WRONLY|os.O_CREATE, 0666)
 	file.Write(jsondata)
 
@@ -215,7 +221,7 @@ func ParseNoECHtml(url_string string) {
 		log.Fatal(err)
 	}
 
-	locale := strings.Split(target_url.Host, ".")[0] + "-" + strings.Split(target_url.Host, ".")[2]
+	locale := NoEcAsicsLocal[target_url.Host]
 	parsedata := ParseData{
 		Locale: locale,
 	}
@@ -285,7 +291,7 @@ func ParseNoECHtml(url_string string) {
 	jsondata, _ := json.Marshal(parsedata)
 
 	file, _ := os.OpenFile(WirteDir+locale+".json", os.O_WRONLY|os.O_CREATE, 0666)
-	fmt.Printf("current url is %s \n", url_string)
+	fmt.Printf("current url is %s ", url_string)
 	file.Write(jsondata)
 }
 
