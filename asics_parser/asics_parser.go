@@ -201,7 +201,7 @@ func ParseECHtml(url_string string) {
 
 	jsondata, _ := json.Marshal(parsedata)
 
-	fmt.Printf("current url is %s", url_string)
+	fmt.Printf("current url is %s \n", url_string)
 	file, _ := os.OpenFile(WirteDir+strings.Split(target_url.Path, "/")[2]+".json", os.O_WRONLY|os.O_CREATE, 0666)
 	file.Write(jsondata)
 
@@ -285,7 +285,7 @@ func ParseNoECHtml(url_string string) {
 	jsondata, _ := json.Marshal(parsedata)
 
 	file, _ := os.OpenFile(WirteDir+locale+".json", os.O_WRONLY|os.O_CREATE, 0666)
-	fmt.Printf("current url is %s", url_string)
+	fmt.Printf("current url is %s \n", url_string)
 	file.Write(jsondata)
 }
 
