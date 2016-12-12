@@ -1,9 +1,10 @@
-package main
+package asics_parser
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -12,9 +13,12 @@ import (
 )
 
 var (
-	EuropeEcAsics = []string{"http://www.asics.com/gb/en-gb", "http://www.asics.com/fr/fr-fr", "http://www.asics.com/es/es-es", "http://www.asics.com/it/it-it"}
-	NoEcAsics     = []string{"https://www.asics.co.za/", "https://www.asics.pl", "https://de.asics.ch"}
+	WirteDir = ""
 )
+
+var EuropeEcAsics []string
+var NoEcAsics []string
+var AllData = map[string]ParseData{}
 
 type ParseData struct {
 	Locale string
@@ -42,6 +46,33 @@ type ItemLink struct {
 	Index   int
 	Img     string `json:"Img,omitempty"`
 	ImgSize string `json:"ImgSize,omitempty"`
+}
+
+func ParseFile(dir string) map[string]ParseData {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		if strings.Contains(file.Name(), ".json") {
+			openfile, err := os.Open(dir + file.Name())
+			if err != nil {
+				log.Fatal(err)
+			}
+			data, err := ioutil.ReadAll(openfile)
+			if err != nil {
+				log.Fatal(err)
+			}
+			var parsedate ParseData
+			json.Unmarshal(data, &parsedate)
+			AllData[parsedate.Locale] = parsedate
+
+		}
+
+	}
+	return AllData
+
 }
 
 func ParseECHtml(url_string string) {
@@ -170,10 +201,9 @@ func ParseECHtml(url_string string) {
 
 	jsondata, _ := json.Marshal(parsedata)
 
-	file, _ := os.OpenFile(strings.Split(target_url.Path, "/")[2]+".json", os.O_WRONLY|os.O_CREATE, 0666)
+	fmt.Printf("current url is %s", url_string)
+	file, _ := os.OpenFile(WirteDir+strings.Split(target_url.Path, "/")[2]+".json", os.O_WRONLY|os.O_CREATE, 0666)
 	file.Write(jsondata)
-
-	fmt.Println(string(jsondata))
 
 }
 
@@ -254,11 +284,9 @@ func ParseNoECHtml(url_string string) {
 
 	jsondata, _ := json.Marshal(parsedata)
 
-	file, _ := os.OpenFile(locale, os.O_WRONLY|os.O_CREATE, 0666)
+	file, _ := os.OpenFile(WirteDir+locale+".json", os.O_WRONLY|os.O_CREATE, 0666)
+	fmt.Printf("current url is %s", url_string)
 	file.Write(jsondata)
-
-	fmt.Println(string(jsondata))
-
 }
 
 func paser_url(target_url *url.URL, url string) (return_url string) {
@@ -269,14 +297,4 @@ func paser_url(target_url *url.URL, url string) (return_url string) {
 		return_url = target_url.Scheme + "://" + target_url.Host + url
 	}
 	return
-}
-
-func main() {
-	for _, url := range EuropeEcAsics {
-		ParseECHtml(url)
-	}
-	for _, url := range NoEcAsics {
-		ParseNoECHtml(url)
-	}
-
 }
